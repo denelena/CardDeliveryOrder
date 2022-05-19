@@ -1,14 +1,12 @@
 package ru.netology;
 
-import com.codeborne.selenide.ClickOptions;
-import com.codeborne.selenide.SelenideElement;
+import com.codeborne.selenide.Condition;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Keys;
 
-import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import static com.codeborne.selenide.Condition.exactText;
 import static com.codeborne.selenide.Condition.visible;
@@ -22,17 +20,13 @@ public class TestCardDeliveryOrder {
 
         $("[data-test-id='city'] input").setValue("Казань");
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_MONTH, 7); //how about a week from today?
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy");
-        String formattedSampleDate = simpleDateFormat.format(calendar.getTime());
+        String planningDate = generateDate(4);
 
-        // [facepalm] цирк с конями
-        while($("[data-test-id='date'] input").val().length() > 0) {
-            $("[data-test-id='date'] input").sendKeys(Keys.BACK_SPACE);
-        }
+        // методом научного тыка было найдено, что поле date надо сначала очистить
+        $("[data-test-id='date'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.BACK_SPACE);
+        //а вот сработает ли оно в каждой породе линукса?  никакой гарантии...
 
-        $("[data-test-id='date'] input").setValue(formattedSampleDate);
+        $("[data-test-id='date'] input").setValue(planningDate);
         $("[data-test-id='name'] input").setValue("Тояма Токанава Товыбоина");
         $("[data-test-id='phone'] input").setValue("+79012345678");
 
@@ -41,6 +35,10 @@ public class TestCardDeliveryOrder {
         $$(".button_theme_alfa-on-white").find(exactText("Забронировать")).click();
 
         $(withText("Успешно!")).shouldBe(visible, Duration.ofSeconds(15));
+        $(".notification__content").shouldHave(Condition.text("Встреча успешно забронирована на " + planningDate), Duration.ofSeconds(15));
     }
 
+    public String generateDate(int days) {
+        return LocalDate.now().plusDays(days).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+    }
 }
